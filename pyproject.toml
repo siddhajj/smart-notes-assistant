@@ -3,11 +3,11 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "notes-app"
+name = "smart-notes-app"
 version = "1.0.0"
 description = "AI-powered notes and tasks management application"
 authors = [
-    {name = "Notes App Team", email = "team@notesapp.com"}
+    {name = "Siddharth Jain", email = "sid.jain250888@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
