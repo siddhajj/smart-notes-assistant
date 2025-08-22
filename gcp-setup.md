@@ -54,8 +54,8 @@ gcloud sql instances describe $DB_INSTANCE_NAME --format="value(connectionName)"
 1. **Create service account:**
 ```bash
 gcloud iam service-accounts create notes-app-sa \
-    --description="Service account for Notes App" \
-    --display-name="Notes App Service Account"
+    --description="Service account for Smart Notes Assistant" \
+    --display-name="Smart Notes Assistant Service Account"
 ```
 
 2. **Grant permissions:**

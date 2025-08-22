@@ -1,6 +1,6 @@
-# Notes App - GCP Deployment Guide
+# Smart Notes Assistant - GCP Deployment Guide
 
-This guide provides step-by-step instructions to deploy the Notes App to Google Cloud Platform using Cloud Run, Cloud SQL, and Vertex AI.
+This guide provides step-by-step instructions to deploy the Smart Notes Assistant to Google Cloud Platform using Cloud Run, Cloud SQL, and Vertex AI.
 
 ## Prerequisites
 

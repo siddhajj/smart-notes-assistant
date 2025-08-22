@@ -46,7 +46,7 @@ def unauthenticated_view() -> rx.Component:
         rx.vstack(
             rx.icon("lock", size=64, color="gray.400"),
             rx.heading(
-                "Welcome to Notes & Tasks",
+                "Welcome to Smart Notes Assistant",
                 size="8",
                 color="gray.600",
                 text_align="center"
@@ -161,8 +161,8 @@ app = rx.App(
 # Add pages
 app.add_page(
     index,
-    title="Notes & Tasks",
-    description="AI-powered notes and task management",
+    title="Smart Notes Assistant",
+    description="AI-powered notes and task management with RAG search",
     on_load=AppState.on_load
 )
 

@@ -1,6 +1,6 @@
 # Local Development with GCP Services
 
-This guide shows you how to run the Notes App locally while connecting to real Google Cloud Platform services like Cloud SQL and Vertex AI. This gives you the best of both worlds: fast local development with production-grade cloud services.
+This guide shows you how to run the Smart Notes Assistant locally while connecting to real Google Cloud Platform services like Cloud SQL and Vertex AI. This gives you the best of both worlds: fast local development with production-grade cloud services.
 
 ## 🎯 Why Use Local + GCP Development?
 

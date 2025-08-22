@@ -1,4 +1,4 @@
-# Notes App - Development Makefile
+# Smart Notes Assistant - Development Makefile
 # Provides convenient commands for local development
 
 .PHONY: help install dev-setup clean test lint format type-check
@@ -9,8 +9,8 @@
 
 # Default target
 help:
-	@echo "Notes App - Available Commands"
-	@echo "=============================="
+	@echo "Smart Notes Assistant - Available Commands"
+	@echo "=========================================="
 	@echo ""
 	@echo "Setup Commands:"
 	@echo "  install      - Install project dependencies"

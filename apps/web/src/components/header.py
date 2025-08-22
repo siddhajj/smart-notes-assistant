@@ -10,7 +10,7 @@ def header() -> rx.Component:
             rx.hstack(
                 rx.icon("book-open", size=32, color="blue.600"),
                 rx.heading(
-                    "Notes & Tasks",
+                    "Smart Notes Assistant",
                     size="7",
                     color="gray.800",
                     weight="bold"

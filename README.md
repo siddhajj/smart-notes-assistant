@@ -1,4 +1,4 @@
-# Notes App - AI-Powered Notes and Tasks Management
+# Smart Notes Assistant - AI-Powered Notes and Tasks Management
 
 A modern, AI-powered productivity application built with FastAPI microservices, Reflex frontend, and Google Cloud Platform integration.
 
