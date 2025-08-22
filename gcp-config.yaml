@@ -1,0 +1,90 @@
+# GCP Configuration for Notes App
+# This file contains all the GCP-specific configuration
+
+project:
+  id: "your-project-id"  # Update this with your actual project ID
+  region: "us-central1"
+  zone: "us-central1-a"
+
+database:
+  instance_name: "notes-app-db"
+  database_name: "notesapp"
+  user: "notesapp_user"
+  version: "POSTGRES_15"
+  tier: "db-f1-micro"  # For production, use db-n1-standard-1 or higher
+
+services:
+  user_service:
+    name: "user-service"
+    image: "gcr.io/PROJECT_ID/user-service"
+    port: 8000
+    min_instances: 0
+    max_instances: 10
+    cpu: "1"
+    memory: "512Mi"
+    
+  notes_service:
+    name: "notes-service"
+    image: "gcr.io/PROJECT_ID/notes-service"
+    port: 8000
+    min_instances: 0
+    max_instances: 10
+    cpu: "1"
+    memory: "512Mi"
+    
+  tasks_service:
+    name: "tasks-service"
+    image: "gcr.io/PROJECT_ID/tasks-service"
+    port: 8000
+    min_instances: 0
+    max_instances: 10
+    cpu: "1"
+    memory: "512Mi"
+    
+  ai_service:
+    name: "ai-service"
+    image: "gcr.io/PROJECT_ID/ai-service"
+    port: 8000
+    min_instances: 0
+    max_instances: 5
+    cpu: "1"
+    memory: "1Gi"  # AI service needs more memory
+    
+  web_app:
+    name: "notes-web"
+    image: "gcr.io/PROJECT_ID/notes-web"
+    port: 8080
+    min_instances: 1
+    max_instances: 10
+    cpu: "1"
+    memory: "512Mi"
+
+secrets:
+  - name: "database-url"
+    description: "PostgreSQL connection string"
+  - name: "jwt-secret"
+    description: "JWT signing secret"
+  - name: "db-password"
+    description: "Database password"
+
+environment_variables:
+  common:
+    GOOGLE_CLOUD_PROJECT: "PROJECT_ID"
+    REGION: "us-central1"
+    INSTANCE_NAME: "notes-app-db"
+    DB_NAME: "notesapp"
+    DB_USER: "notesapp_user"
+    
+  ai_service:
+    VERTEX_AI_LOCATION: "us-central1"
+    MODEL_NAME: "gemini-1.5-flash"
+
+load_balancer:
+  name: "notes-app-lb"
+  ssl_certificate: "notes-app-ssl"
+  domain: "your-domain.com"  # Update with your domain
+
+monitoring:
+  log_level: "INFO"
+  enable_trace: true
+  enable_profiler: false

@@ -1,0 +1,54 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-root
+
+      - name: Run tests
+        run: poetry run pytest
+
+      - name: Build Frontend (Pynecone)
+        run: poetry run pynecone export --directory apps/web
+
+      - name: Deploy Frontend to GCS
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          path: apps/web/public
+          destination: gs://your-frontend-bucket-name
+          parent: false
+
+      - name: Build and Deploy Backend Microservices (Cloud Run)
+        run: |
+          # Example for user-service
+          gcloud auth activate-service-account --key-file=gcp-key.json
+          gcloud config set project your-gcp-project-id
+          gcloud builds submit --tag gcr.io/your-gcp-project-id/user-service ./apps/api/user-service
+                        gcloud run deploy user-service --image gcr.io/your-gcp-project-id/user-service --platform managed --region us-central1 --allow-unauthenticated
+
+              gcloud builds submit --tag gcr.io/your-gcp-project-id/ai-service ./apps/api/ai-service
+              gcloud run deploy ai-service --image gcr.io/your-gcp-project-id/ai-service --platform managed --region us-central1 --allow-unauthenticated
+
+              # Repeat for notes-service, tasks-service
+

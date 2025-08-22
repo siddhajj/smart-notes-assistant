@@ -1,0 +1,57 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ai-service
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/service-account: notes-app-sa@PROJECT_ID.iam.gserviceaccount.com
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 600  # AI operations may take longer
+      serviceAccountName: notes-app-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+      - image: gcr.io/PROJECT_ID/ai-service
+        ports:
+        - name: http1
+          containerPort: 8000
+        env:
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT_ID"
+        - name: REGION
+          value: "REGION"
+        - name: VERTEX_AI_LOCATION
+          value: "us-central1"
+        - name: MODEL_NAME
+          value: "gemini-1.5-flash"
+        - name: NOTES_SERVICE_URL
+          value: "https://notes-service-PROJECT_HASH-REGION.a.run.app"
+        - name: TASKS_SERVICE_URL
+          value: "https://tasks-service-PROJECT_HASH-REGION.a.run.app"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "1Gi"
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 0
+          timeoutSeconds: 1
+          periodSeconds: 3
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 3

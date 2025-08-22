@@ -1,0 +1,95 @@
+# Cloud Monitoring Configuration for Notes App
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-config
+data:
+  # Application metrics
+  custom_metrics: |
+    - name: "notes_created_total"
+      description: "Total number of notes created"
+      type: "COUNTER"
+      labels: ["user_id", "service"]
+    
+    - name: "tasks_created_total"
+      description: "Total number of tasks created"
+      type: "COUNTER"
+      labels: ["user_id", "service"]
+    
+    - name: "ai_requests_total"
+      description: "Total number of AI requests"
+      type: "COUNTER"
+      labels: ["request_type", "status"]
+    
+    - name: "database_connections"
+      description: "Number of active database connections"
+      type: "GAUGE"
+      labels: ["service", "status"]
+
+  # Error tracking
+  error_reporting: |
+    enabled: true
+    sample_rate: 1.0
+    ignore_errors:
+      - "HTTPException"
+      - "ValidationError"
+
+  # Performance monitoring
+  trace_config: |
+    enabled: true
+    sample_rate: 0.1  # Sample 10% of requests
+    include_paths:
+      - "/api/*"
+    exclude_paths:
+      - "/health"
+      - "/metrics"
+
+---
+# Alerting policies
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: notes-app-alerts
+spec:
+  groups:
+  - name: notes-app
+    rules:
+    # High error rate alert
+    - alert: HighErrorRate
+      expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High error rate detected"
+        description: "Error rate is {{ $value }} requests per second"
+
+    # Database connection alert
+    - alert: DatabaseConnectionHigh
+      expr: database_connections > 80
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High database connection count"
+        description: "Database connections: {{ $value }}"
+
+    # AI service latency alert
+    - alert: AIServiceHighLatency
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="ai-service"}[5m])) > 10
+      for: 3m
+      labels:
+        severity: warning
+      annotations:
+        summary: "AI service high latency"
+        description: "95th percentile latency: {{ $value }}s"
+
+    # Memory usage alert
+    - alert: HighMemoryUsage
+      expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage"
+        description: "Memory usage: {{ $value | humanizePercentage }}"

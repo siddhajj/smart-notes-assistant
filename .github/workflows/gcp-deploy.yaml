@@ -1,0 +1,153 @@
+name: GCP Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  REGISTRY: gcr.io
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[api-common,user-service,dev]"
+          pip install pytest httpx
+
+      - name: Run tests
+        run: |
+          # Add your test commands here
+          echo "Tests would run here"
+          # pytest tests/
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build and Deploy User Service
+        run: |
+          gcloud builds submit --tag ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/user-service --file apps/api/user-service/Dockerfile .
+          gcloud run deploy user-service \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/user-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},REGION=${{ env.REGION }},INSTANCE_NAME=notes-app-db,DB_NAME=notesapp,DB_USER=notesapp_user \
+            --service-account notes-app-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: Build and Deploy Notes Service
+        run: |
+          gcloud builds submit --tag ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/notes-service --file apps/api/notes-service/Dockerfile .
+          gcloud run deploy notes-service \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/notes-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},REGION=${{ env.REGION }},INSTANCE_NAME=notes-app-db,DB_NAME=notesapp,DB_USER=notesapp_user \
+            --service-account notes-app-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: Build and Deploy Tasks Service
+        run: |
+          gcloud builds submit --tag ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/tasks-service --file apps/api/tasks-service/Dockerfile .
+          gcloud run deploy tasks-service \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/tasks-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},REGION=${{ env.REGION }},INSTANCE_NAME=notes-app-db,DB_NAME=notesapp,DB_USER=notesapp_user \
+            --service-account notes-app-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: Build and Deploy AI Service
+        run: |
+          gcloud builds submit --tag ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/ai-service --file apps/api/ai-service/Dockerfile .
+          gcloud run deploy ai-service \
+            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/ai-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 2 \
+            --min-instances 0 \
+            --max-instances 5 \
+            --timeout 600 \
+            --set-env-vars GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},REGION=${{ env.REGION }},VERTEX_AI_LOCATION=us-central1,MODEL_NAME=gemini-1.5-flash \
+            --service-account notes-app-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: Update Service URLs
+        run: |
+          # Get service URLs
+          AI_SERVICE_URL=$(gcloud run services describe ai-service --platform managed --region ${{ env.REGION }} --format "value(status.url)")
+          NOTES_SERVICE_URL=$(gcloud run services describe notes-service --platform managed --region ${{ env.REGION }} --format "value(status.url)")
+          TASKS_SERVICE_URL=$(gcloud run services describe tasks-service --platform managed --region ${{ env.REGION }} --format "value(status.url)")
+          
+          # Update AI service with other service URLs
+          gcloud run services update ai-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --set-env-vars NOTES_SERVICE_URL=${NOTES_SERVICE_URL}/notes,TASKS_SERVICE_URL=${TASKS_SERVICE_URL}/tasks
+          
+          # Update Notes service with AI service URL
+          gcloud run services update notes-service \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --set-env-vars AI_SERVICE_URL=$AI_SERVICE_URL
+
+      - name: Deploy Notification
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Services deployed:"
+          echo "- User Service: $(gcloud run services describe user-service --platform managed --region ${{ env.REGION }} --format 'value(status.url)')"
+          echo "- Notes Service: $(gcloud run services describe notes-service --platform managed --region ${{ env.REGION }} --format 'value(status.url)')"
+          echo "- Tasks Service: $(gcloud run services describe tasks-service --platform managed --region ${{ env.REGION }} --format 'value(status.url)')"
+          echo "- AI Service: $(gcloud run services describe ai-service --platform managed --region ${{ env.REGION }} --format 'value(status.url)')"

@@ -1,0 +1,222 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notes-app"
+version = "1.0.0"
+description = "AI-powered notes and tasks management application"
+authors = [
+    {name = "Notes App Team", email = "team@notesapp.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "pg8000>=1.29.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "httpx>=0.24.0",
+    "google-cloud-sql[pg8000]>=2.11.0",
+    "google-cloud-secret-manager>=2.16.0",
+    "google-auth>=2.17.0",
+    "google-cloud-aiplatform>=1.38.0",
+    "vertexai>=1.38.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "reflex>=0.4.0",
+]
+
+[project.optional-dependencies]
+# Core service dependencies
+api-common = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "pg8000>=1.29.0",
+    "httpx>=0.24.0",
+    "cloud-sql-python-connector[pg8000]>=1.7.0",
+    "google-cloud-secret-manager>=2.16.0",
+    "google-auth>=2.17.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "structlog>=23.1.0",
+]
+
+# Authentication service
+user-service = [
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+]
+
+# Notes service (uses api-common)
+notes-service = []
+
+# Tasks service (uses api-common)
+tasks-service = []
+
+# AI service
+ai-service = [
+    "google-cloud-aiplatform>=1.38.0",
+    "google-generativeai>=0.3.0",
+    "vertexai>=1.38.0",
+]
+
+# Search service (includes embedding and RAG dependencies)
+search-service = [
+    "openai>=1.0.0",
+    "numpy>=1.24.0",
+]
+
+# Frontend web app
+web = [
+    "reflex>=0.4.0",
+    "python-multipart>=0.0.6",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.0.0",
+    "alembic>=1.12.0",
+    "watchdog>=3.0.0",
+    "ipython>=8.0.0",
+]
+
+# Documentation
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocs-mermaid2-plugin>=1.0.0",
+]
+
+# Monitoring and logging
+monitoring = [
+    "google-cloud-logging>=3.8.0",
+    "google-cloud-monitoring>=2.16.0",
+    "google-cloud-error-reporting>=1.9.0",
+]
+
+# Security scanning
+security = [
+    "safety>=2.3.0",
+    "bandit>=1.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/notes-app"
+Documentation = "https://notes-app.readthedocs.io/"
+Repository = "https://github.com/your-org/notes-app.git"
+Issues = "https://github.com/your-org/notes-app/issues"
+
+[tool.setuptools.packages.find]
+where = ["apps"]
+include = ["api*", "web*"]
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=apps --cov-report=term-missing --cov-report=html"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["apps"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

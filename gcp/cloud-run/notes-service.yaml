@@ -1,0 +1,58 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: notes-service
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:notes-app-db
+        run.googleapis.com/service-account: notes-app-sa@PROJECT_ID.iam.gserviceaccount.com
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: notes-app-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+      - image: gcr.io/PROJECT_ID/notes-service
+        ports:
+        - name: http1
+          containerPort: 8000
+        env:
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT_ID"
+        - name: REGION
+          value: "REGION"
+        - name: INSTANCE_NAME
+          value: "notes-app-db"
+        - name: DB_NAME
+          value: "notesapp"
+        - name: DB_USER
+          value: "notesapp_user"
+        - name: AI_SERVICE_URL
+          value: "https://ai-service-PROJECT_HASH-REGION.a.run.app"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 0
+          timeoutSeconds: 1
+          periodSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 3

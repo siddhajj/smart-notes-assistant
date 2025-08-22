@@ -1,0 +1,118 @@
+# Docker Compose for local development
+# Run with: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: notesapp
+      POSTGRES_USER: notesapp_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-EXEC", "pg_isready -U notesapp_user -d notesapp"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/api/user-service/Dockerfile
+    ports:
+      - "8003:8000"
+    environment:
+      - DATABASE_URL=postgresql://notesapp_user:dev_password@postgres:5432/notesapp
+      - JWT_SECRET_KEY=dev-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/user-service:/app
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  # Notes Service
+  notes-service:
+    build:
+      context: .
+      dockerfile: apps/api/notes-service/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://notesapp_user:dev_password@postgres:5432/notesapp
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    volumes:
+      - ./apps/api/notes-service:/app
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  # Tasks Service
+  tasks-service:
+    build:
+      context: .
+      dockerfile: apps/api/tasks-service/Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://notesapp_user:dev_password@postgres:5432/notesapp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/tasks-service:/app
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  # AI Service
+  ai-service:
+    build:
+      context: .
+      dockerfile: apps/api/ai-service/Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - NOTES_SERVICE_URL=http://notes-service:8000/notes
+      - TASKS_SERVICE_URL=http://tasks-service:8000/tasks
+      # For local development, AI features will use fallback mode
+      # Add GCP credentials for full AI functionality
+    volumes:
+      - ./apps/api/ai-service:/app
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  # Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+      - "8080:8000"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8000
+      - NOTES_SERVICE_URL=http://notes-service:8000
+      - TASKS_SERVICE_URL=http://tasks-service:8000
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      - user-service
+      - notes-service
+      - tasks-service
+      - ai-service
+    volumes:
+      - ./apps/web:/app
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: notes-app-network
