@@ -88,7 +88,7 @@ A modern, AI-powered productivity application built with FastAPI microservices, 
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.12+
 - Docker and Docker Compose
 - Google Cloud CLI (for production deployment)
 - Node.js 18+ (for frontend)

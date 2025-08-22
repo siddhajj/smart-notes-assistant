@@ -7,13 +7,13 @@ set -e
 
 echo "🚀 Setting up Notes App development environment"
 
-# Check if Python 3.11+ is installed
+# Check if Python 3.12+ is installed
 python_version=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
-required_version="3.11"
+required_version="3.12"
 
 if [[ $(echo "$python_version >= $required_version" | bc -l) -eq 0 ]]; then
-    echo "❌ Python 3.11+ is required. Found: $python_version"
-    echo "Please install Python 3.11 or higher"
+    echo "❌ Python 3.12+ is required. Found: $python_version"
+    echo "Please install Python 3.12 or higher"
     exit 1
 fi
 
