@@ -122,7 +122,7 @@ After deployment, services will be available at:
 
 All services connect to a shared Cloud SQL PostgreSQL instance:
 - **Instance**: `notes-app-db`
-- **Database**: `notesapp` 
+- **Database**: `notesapp`
 - **Connection**: Via Cloud SQL Python Connector
 - **Authentication**: Service account with Cloud SQL Client role
 
